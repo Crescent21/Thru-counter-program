@@ -2,52 +2,40 @@
 
 My first smart contract built using the Thru C SDK.
 
-## Overview
-
-This project demonstrates how to build, deploy, and interact with a simple counter smart contract on the Thru Alphanet.
-
 ## Features
 
 - Create a counter account
-- Increment the counter
-- Program deployment using the Thru CLI
-- Program Derived Address (PDA)
-- State proof generation
-- Transaction execution
-
-## Network
-
-- Thru Alphanet
-
-## Program ID
-
-
-ta99Uy0PVvdKKZRdjeMQyFLKPvU1AAFOCCHL-m-WQkKjPU
-
+- Increment counter value
+- Deterministic PDA account generation
+- State proof verification
+- Deploy on Thru Alphanet
 
 ## Technologies
 
 - C
 - Thru SDK
+- Git
+- GitHub
 - Ubuntu
-- GNU Make
 
-## What I Learned
+## Deployment Steps
 
-- Writing a smart contract in C
-- Compiling and deploying a program
-- Creating Program Derived Addresses (PDAs)
-- Generating state proofs
-- Executing on-chain transactions
-- Managing on-chain account state
+1. Create a wallet account
+2. Fund the account using the faucet
+3. Build the counter program
+4. Deploy the program
+5. Derive the counter PDA
+6. Generate a state proof
+7. Create the counter account
+8. Increment the counter
 
-## Future Improvements
+## Result
 
-- Decrement counter
-- Reset counter
-- Set custom counter value
-- Access control
+Successfully deployed and executed transactions on the Thru blockchain.
 
-## Acknowledgements
+## Next Improvements
 
-This project was built while learning from the official Thru developer documentation.
+- Add decrement
+- Add reset
+- Add set value
+- Add access contro
