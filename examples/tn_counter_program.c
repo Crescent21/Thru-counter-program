@@ -81,6 +81,41 @@ tsys_emit_event(
 
 tsdk_return(TSDK_SUCCESS);
 }
+static void handle_reset_counter(
+    uchar const *instruction_data,
+    ulong instruction_data_sz TSDK_PARAM_UNUSED
+) {
+    tn_counter_increment_args_t const *args =
+        (tn_counter_increment_args_t const *)instruction_data;
+
+    ushort account_idx = args->account_index;
+
+    /* Get account data pointer */
+    void *account_data = tsdk_get_account_data_ptr(account_idx);
+    if (account_data == NULL) {
+        tsdk_revert(TN_COUNTER_ERR_ACCOUNT_DATA_ACCESS_FAILED);
+    }
+
+    /* Set account as writable */
+    ulong result = tsys_set_account_data_writable(account_idx);
+    if (result != TSDK_SUCCESS) {
+        tsdk_revert(TN_COUNTER_ERR_ACCOUNT_SET_WRITABLE_FAILED);
+    }
+
+    /* Reset counter to zero */
+    tn_counter_account_t *counter_account =
+        (tn_counter_account_t *)account_data;
+
+    counter_account->counter_value = 0;
+
+    /* Emit reset event */
+    tsys_emit_event(
+        (uchar const *)&counter_account->counter_value,
+        sizeof(ulong)
+    );
+
+    tsdk_return(TSDK_SUCCESS);
+}
 static void handle_increment_counter(uchar const *instruction_data, ulong instruction_data_sz TSDK_PARAM_UNUSED) {
     tn_counter_increment_args_t const *args = (tn_counter_increment_args_t const *)instruction_data;
 
@@ -156,6 +191,13 @@ case TN_COUNTER_INSTRUCTION_DECREMENT:
     handle_decrement_counter(instruction_data, instruction_data_sz);
     break;
 
+case TN_COUNTER_INSTRUCTION_RESET:
+    if (instruction_data_sz != sizeof(tn_counter_increment_args_t)) {
+        tsdk_revert(TN_COUNTER_ERR_INVALID_INSTRUCTION_DATA_SIZE);
+    }
+
+    handle_reset_counter(instruction_data, instruction_data_sz);
+    break;
 default:
     tsdk_revert(TN_COUNTER_ERR_INVALID_INSTRUCTION_TYPE);
 }
