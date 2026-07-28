@@ -44,7 +44,43 @@ static void handle_create_counter(uchar const *instruction_data, ulong instructi
 
     tsdk_return(TSDK_SUCCESS);
 }
+static void handle_decrement_counter(
+    uchar const *instruction_data,
+    ulong instruction_data_sz TSDK_PARAM_UNUSED
+) {
+    tn_counter_increment_args_t const *args =
+        (tn_counter_increment_args_t const *)instruction_data;
 
+    ushort account_idx = args->account_index;
+
+    /* Get account data pointer */
+    void *account_data = tsdk_get_account_data_ptr(account_idx);
+    if (account_data == NULL) {
+        tsdk_revert(TN_COUNTER_ERR_ACCOUNT_DATA_ACCESS_FAILED);
+    }
+
+    /* Set account as writable so we can modify the counter value */
+    ulong result = tsys_set_account_data_writable(account_idx);
+    if (result != TSDK_SUCCESS) {
+        tsdk_revert(TN_COUNTER_ERR_ACCOUNT_SET_WRITABLE_FAILED);
+    }
+
+    /* Decrement the counter (don't go below zero) */
+tn_counter_account_t *counter_account =
+    (tn_counter_account_t *)account_data;
+
+if (counter_account->counter_value > 0) {
+    counter_account->counter_value--;
+}
+
+/* Emit decrement event */
+tsys_emit_event(
+    (uchar const *)&counter_account->counter_value,
+    sizeof(ulong)
+);
+
+tsdk_return(TSDK_SUCCESS);
+}
 static void handle_increment_counter(uchar const *instruction_data, ulong instruction_data_sz TSDK_PARAM_UNUSED) {
     tn_counter_increment_args_t const *args = (tn_counter_increment_args_t const *)instruction_data;
 
@@ -84,34 +120,45 @@ TSDK_ENTRYPOINT_FN void start(void) {
 
     uint const *instruction_type = (uint const *)instruction_data;
 
-    switch (*instruction_type) {
-        case TN_COUNTER_INSTRUCTION_CREATE:
-            /* Check minimum size to safely access struct fields */
-            if (instruction_data_sz < sizeof(tn_counter_create_args_t)) {
-                tsdk_revert(TN_COUNTER_ERR_INVALID_INSTRUCTION_DATA_SIZE);
-            }
-            tn_counter_create_args_t const *create_args = (tn_counter_create_args_t const *)instruction_data;
-            ulong expected_size = sizeof(tn_counter_create_args_t) + create_args->proof_size;
+     switch (*instruction_type) {
 
-            /* Check exact size including proof data */
-            if (instruction_data_sz != expected_size) {
-                tsdk_revert(TN_COUNTER_ERR_INVALID_INSTRUCTION_DATA_SIZE);
-            }
-
-            handle_create_counter(instruction_data, instruction_data_sz);
-            break;
-
-        case TN_COUNTER_INSTRUCTION_INCREMENT:
-            /* Check exact instruction size */
-            if (instruction_data_sz != sizeof(tn_counter_increment_args_t)) {
-                tsdk_revert(TN_COUNTER_ERR_INVALID_INSTRUCTION_DATA_SIZE);
-            }
-            handle_increment_counter(instruction_data, instruction_data_sz);
-            break;
-
-        default:
-            tsdk_revert(TN_COUNTER_ERR_INVALID_INSTRUCTION_TYPE);
+case TN_COUNTER_INSTRUCTION_CREATE:
+    if (instruction_data_sz < sizeof(tn_counter_create_args_t)) {
+        tsdk_revert(TN_COUNTER_ERR_INVALID_INSTRUCTION_DATA_SIZE);
     }
+
+    tn_counter_create_args_t const *create_args =
+        (tn_counter_create_args_t const *)instruction_data;
+
+    ulong expected_size =
+        sizeof(tn_counter_create_args_t) + create_args->proof_size;
+
+    if (instruction_data_sz != expected_size) {
+        tsdk_revert(TN_COUNTER_ERR_INVALID_INSTRUCTION_DATA_SIZE);
+    }
+
+    handle_create_counter(instruction_data, instruction_data_sz);
+    break;
+
+case TN_COUNTER_INSTRUCTION_INCREMENT:
+    if (instruction_data_sz != sizeof(tn_counter_increment_args_t)) {
+        tsdk_revert(TN_COUNTER_ERR_INVALID_INSTRUCTION_DATA_SIZE);
+    }
+
+    handle_increment_counter(instruction_data, instruction_data_sz);
+    break;
+
+case TN_COUNTER_INSTRUCTION_DECREMENT:
+    if (instruction_data_sz != sizeof(tn_counter_increment_args_t)) {
+        tsdk_revert(TN_COUNTER_ERR_INVALID_INSTRUCTION_DATA_SIZE);
+    }
+
+    handle_decrement_counter(instruction_data, instruction_data_sz);
+    break;
+
+default:
+    tsdk_revert(TN_COUNTER_ERR_INVALID_INSTRUCTION_TYPE);
+}
 
     /* Should never reach here */
     tsdk_revert(TN_COUNTER_ERR_INVALID_INSTRUCTION_TYPE);

@@ -13,7 +13,10 @@
 
 /* Instruction types */
 #define TN_COUNTER_INSTRUCTION_CREATE    (0U)
-#define TN_COUNTER_INSTRUCTION_INCREMENT (1U)
+#define TN_COUNTER_INSTRUCTION_INCREMENT   (1U)
+#define TN_COUNTER_INSTRUCTION_DECREMENT   (2U)
+#define TN_COUNTER_INSTRUCTION_RESET       (3U)
+#define TN_COUNTER_INSTRUCTION_SET         (4U)
 
 /* Create counter instruction arguments */
 typedef struct __attribute__((packed)) {
@@ -29,6 +32,24 @@ typedef struct __attribute__((packed)) {
     uint instruction_type;
     ushort account_index;
 } tn_counter_increment_args_t;
+/* Decrement counter instruction arguments */
+typedef struct __attribute__((packed)) {
+    uint instruction_type;
+    ushort account_index;
+} tn_counter_decrement_args_t;
+
+/* Reset counter instruction arguments */
+typedef struct __attribute__((packed)) {
+    uint instruction_type;
+    ushort account_index;
+} tn_counter_reset_args_t;
+
+/* Set counter instruction arguments */
+typedef struct __attribute__((packed)) {
+    uint instruction_type;
+    ushort account_index;
+    ulong new_value;
+} tn_counter_set_args_t;
 
 /* Counter account data structure */
 typedef struct __attribute__((packed)) {
